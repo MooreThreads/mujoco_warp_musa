@@ -1,0 +1,497 @@
+# Copyright 2026 Moore Threads
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
+import axinfra as ax
+
+from . import types as mjmtp
+from .types import ConeType
+from .types import DisableBit
+
+
+def make_constraint(m: mjmtp.Model, d: mjmtp.Data):
+  """Creates constraint jacobians and other supporting data."""
+  ax.launch(
+    "_zero_constraint_counts",
+    dim=d.nworld,
+    inputs=[d.ne, d.nf, d.nl, d.nefc, d.ne_connect, d.ne_weld, d.ne_jnt, d.ne_ten, d.ne_flex],
+  )
+
+  if not (m.opt.disableflags & DisableBit.CONSTRAINT):
+    refsafe = m.opt.disableflags & DisableBit.REFSAFE
+
+    if not (m.opt.disableflags & DisableBit.EQUALITY):
+      ax.launch(
+        "_efc_equality_connect",
+        dim=(d.nworld, m.eq_connect_adr.size),
+        inputs=[
+          m.nv,
+          m.nsite,
+          m.opt.timestep,
+          m.body_parentid,
+          m.body_rootid,
+          m.body_invweight0,
+          m.dof_bodyid,
+          m.site_bodyid,
+          m.eq_obj1id,
+          m.eq_obj2id,
+          m.eq_objtype,
+          m.eq_solref,
+          m.eq_solimp,
+          m.eq_data,
+          m.eq_connect_adr,
+          d.qvel,
+          d.eq_active,
+          d.xpos,
+          d.xmat,
+          d.site_xpos,
+          d.subtree_com,
+          d.cdof,
+          d.njmax,
+          refsafe,
+        ],
+        outputs=[
+          d.nefc,
+          d.efc.type,
+          d.efc.id,
+          d.efc.J,
+          d.efc.pos,
+          d.efc.margin,
+          d.efc.D,
+          d.efc.vel,
+          d.efc.aref,
+          d.efc.frictionloss,
+          d.ne_connect,
+        ],
+      )
+
+      ax.launch(
+        "_efc_equality_weld",
+        dim=(d.nworld, m.eq_wld_adr.size),
+        inputs=[
+          m.nv,
+          m.nsite,
+          m.opt.timestep,
+          m.body_parentid,
+          m.body_rootid,
+          m.body_invweight0,
+          m.dof_bodyid,
+          m.site_bodyid,
+          m.site_quat,
+          m.eq_obj1id,
+          m.eq_obj2id,
+          m.eq_objtype,
+          m.eq_solref,
+          m.eq_solimp,
+          m.eq_data,
+          m.eq_wld_adr,
+          d.qvel,
+          d.eq_active,
+          d.xpos,
+          d.xquat,
+          d.xmat,
+          d.site_xpos,
+          d.subtree_com,
+          d.cdof,
+          d.njmax,
+          refsafe,
+        ],
+        outputs=[
+          d.nefc,
+          d.efc.type,
+          d.efc.id,
+          d.efc.J,
+          d.efc.pos,
+          d.efc.margin,
+          d.efc.D,
+          d.efc.vel,
+          d.efc.aref,
+          d.efc.frictionloss,
+          d.ne_weld,
+        ],
+      )
+      
+      ax.launch(
+        "_efc_equality_joint",
+        dim=(d.nworld, m.eq_jnt_adr.size),
+        inputs=[
+          m.nv,
+          m.opt.timestep,
+          m.qpos0,
+          m.jnt_qposadr,
+          m.jnt_dofadr,
+          m.dof_invweight0,
+          m.eq_obj1id,
+          m.eq_obj2id,
+          m.eq_solref,
+          m.eq_solimp,
+          m.eq_data,
+          m.eq_jnt_adr,
+          d.qpos,
+          d.qvel,
+          d.eq_active,
+          d.njmax,
+          refsafe,
+        ],
+        outputs=[
+          d.nefc,
+          d.efc.type,
+          d.efc.id,
+          d.efc.J,
+          d.efc.pos,
+          d.efc.margin,
+          d.efc.D,
+          d.efc.vel,
+          d.efc.aref,
+          d.efc.frictionloss,
+          d.ne_jnt,
+        ],
+      )
+      
+      ax.launch(
+        "_efc_equality_tendon",
+        dim=(d.nworld, m.eq_ten_adr.size),
+        inputs=[
+          m.nv,
+          m.opt.timestep,
+          m.eq_obj1id,
+          m.eq_obj2id,
+          m.eq_solref,
+          m.eq_solimp,
+          m.eq_data,
+          m.tendon_length0,
+          m.tendon_invweight0,
+          m.eq_ten_adr,
+          d.qvel,
+          d.eq_active,
+          d.ten_J,
+          d.ten_length,
+          d.njmax,
+          refsafe,
+        ],
+        outputs=[
+          d.nefc,
+          d.efc.type,
+          d.efc.id,
+          d.efc.J,
+          d.efc.pos,
+          d.efc.margin,
+          d.efc.D,
+          d.efc.vel,
+          d.efc.aref,
+          d.efc.frictionloss,
+          d.ne_ten,
+        ],
+      )
+
+      ax.launch(
+        "_efc_equality_flex",
+        dim=(d.nworld, m.eq_flex_adr.size, m.nflexedge),
+        inputs=[
+          m.nv,
+          m.opt.timestep,
+          m.flexedge_length0,
+          m.flexedge_invweight0,
+          m.eq_solref,
+          m.eq_solimp,
+          m.eq_flex_adr,
+          d.qvel,
+          d.flexedge_J,
+          d.flexedge_length,
+          d.njmax,
+          refsafe,
+        ],
+        outputs=[
+          d.nefc,
+          d.efc.type,
+          d.efc.id,
+          d.efc.J,
+          d.efc.pos,
+          d.efc.margin,
+          d.efc.D,
+          d.efc.vel,
+          d.efc.aref,
+          d.efc.frictionloss,
+          d.ne_flex,
+        ],
+      )
+
+      ax.launch(
+        "_num_equality",
+        dim=d.nworld,
+        inputs=[d.ne_connect, d.ne_weld, d.ne_jnt, d.ne_ten, d.ne_flex],
+        outputs=[d.ne],
+      )
+
+    if not (m.opt.disableflags & DisableBit.FRICTIONLOSS):
+      ax.launch(
+        "_efc_friction_dof",
+        dim=(d.nworld, m.nv),
+        inputs=[
+          m.nv,
+          m.opt.timestep,
+          m.dof_solref,
+          m.dof_solimp,
+          m.dof_frictionloss,
+          m.dof_invweight0,
+          d.qvel,
+          d.njmax,
+          refsafe,
+        ],
+        outputs=[
+          d.nf,
+          d.nefc,
+          d.efc.type,
+          d.efc.id,
+          d.efc.J,
+          d.efc.pos,
+          d.efc.margin,
+          d.efc.D,
+          d.efc.vel,
+          d.efc.aref,
+          d.efc.frictionloss,
+        ],
+      )
+
+      ax.launch(
+        "_efc_friction_tendon",
+        dim=(d.nworld, m.ntendon),
+        inputs=[
+          m.nv,
+          m.opt.timestep,
+          m.tendon_solref_fri,
+          m.tendon_solimp_fri,
+          m.tendon_frictionloss,
+          m.tendon_invweight0,
+          d.qvel,
+          d.ten_J,
+          d.njmax,
+          refsafe,
+        ],
+        outputs=[
+          d.nf,
+          d.nefc,
+          d.efc.type,
+          d.efc.id,
+          d.efc.J,
+          d.efc.pos,
+          d.efc.margin,
+          d.efc.D,
+          d.efc.vel,
+          d.efc.aref,
+          d.efc.frictionloss,
+        ],
+      )
+
+    # limit
+    if not (m.opt.disableflags & DisableBit.LIMIT):
+      ax.launch(
+        "_efc_limit_ball",
+        dim=(d.nworld, m.jnt_limited_ball_adr.size),
+        inputs=[
+          m.nv,
+          m.opt.timestep,
+          m.jnt_qposadr,
+          m.jnt_dofadr,
+          m.jnt_solref,
+          m.jnt_solimp,
+          m.jnt_range,
+          m.jnt_margin,
+          m.dof_invweight0,
+          m.jnt_limited_ball_adr,
+          d.qpos,
+          d.qvel,
+          d.njmax,
+          refsafe,
+        ],
+        outputs=[
+          d.nl,
+          d.nefc,
+          d.efc.type,
+          d.efc.id,
+          d.efc.J,
+          d.efc.pos,
+          d.efc.margin,
+          d.efc.D,
+          d.efc.vel,
+          d.efc.aref,
+          d.efc.frictionloss,
+        ],
+      )
+
+      ax.launch(
+        "_efc_limit_slide_hinge",
+        dim=(d.nworld, m.jnt_limited_slide_hinge_adr.size),
+        inputs=[
+          m.nv,
+          m.opt.timestep,
+          m.jnt_qposadr,
+          m.jnt_dofadr,
+          m.jnt_solref,
+          m.jnt_solimp,
+          m.jnt_range,
+          m.jnt_margin,
+          m.dof_invweight0,
+          m.jnt_limited_slide_hinge_adr,
+          d.qpos,
+          d.qvel,
+          d.njmax,
+          refsafe,
+        ],
+        outputs=[
+          d.nl,
+          d.nefc,
+          d.efc.type,
+          d.efc.id,
+          d.efc.J,
+          d.efc.pos,
+          d.efc.margin,
+          d.efc.D,
+          d.efc.vel,
+          d.efc.aref,
+          d.efc.frictionloss,
+        ],
+      )
+
+      ax.launch(
+        "_efc_limit_tendon",
+        dim=(d.nworld, m.tendon_limited_adr.size),
+        inputs=[
+          m.nv,
+          m.opt.timestep,
+          m.jnt_dofadr,
+          m.tendon_adr,
+          m.tendon_num,
+          m.tendon_solref_lim,
+          m.tendon_solimp_lim,
+          m.tendon_range,
+          m.tendon_margin,
+          m.tendon_invweight0,
+          m.wrap_type,
+          m.wrap_objid,
+          m.tendon_limited_adr,
+          d.qvel,
+          d.ten_J,
+          d.ten_length,
+          d.njmax,
+          refsafe,
+        ],
+        outputs=[
+          d.nl,
+          d.nefc,
+          d.efc.type,
+          d.efc.id,
+          d.efc.J,
+          d.efc.pos,
+          d.efc.margin,
+          d.efc.D,
+          d.efc.vel,
+          d.efc.aref,
+          d.efc.frictionloss,
+        ],
+      )
+
+    # contact
+    if not (m.opt.disableflags & DisableBit.CONTACT):
+      if m.opt.cone == ConeType.PYRAMIDAL:
+        ax.launch(
+          "_efc_contact_pyramidal",
+          dim=(d.naconmax, m.nmaxpyramid),
+          inputs=[
+            m.nv,
+            m.opt.timestep,
+            m.opt.impratio,
+            m.body_parentid,
+            m.body_rootid,
+            m.body_invweight0,
+            m.dof_bodyid,
+            m.geom_bodyid,
+            d.qvel,
+            d.subtree_com,
+            d.cdof,
+            d.njmax,
+            d.nacon,
+            refsafe,
+            d.contact.dist,
+            d.contact.dim,
+            d.contact.includemargin,
+            d.contact.worldid,
+            d.contact.geom,
+            d.contact.pos,
+            d.contact.frame,
+            d.contact.friction,
+            d.contact.solref,
+            d.contact.solimp,
+            d.contact.type,
+          ],
+          outputs=[
+            d.nefc,
+            d.contact.efc_address,
+            d.efc.type,
+            d.efc.id,
+            d.efc.J,
+            d.efc.pos,
+            d.efc.margin,
+            d.efc.D,
+            d.efc.vel,
+            d.efc.aref,
+            d.efc.frictionloss,
+          ],
+        )
+      elif m.opt.cone == ConeType.ELLIPTIC:
+        ax.launch(
+          "_efc_contact_elliptic",
+          dim=(d.naconmax, m.nmaxcondim),
+          inputs=[
+            m.nv,
+            m.opt.timestep,
+            m.opt.impratio,
+            m.body_parentid,
+            m.body_rootid,
+            m.body_invweight0,
+            m.dof_bodyid,
+            m.geom_bodyid,
+            d.qvel,
+            d.subtree_com,
+            d.cdof,
+            d.njmax,
+            d.nacon,
+            refsafe,
+            d.contact.dist,
+            d.contact.dim,
+            d.contact.includemargin,
+            d.contact.worldid,
+            d.contact.geom,
+            d.contact.pos,
+            d.contact.frame,
+            d.contact.friction,
+            d.contact.solref,
+            d.contact.solreffriction,
+            d.contact.solimp,
+            d.contact.type,
+          ],
+          outputs=[
+            d.nefc,
+            d.contact.efc_address,
+            d.efc.type,
+            d.efc.id,
+            d.efc.J,
+            d.efc.pos,
+            d.efc.margin,
+            d.efc.D,
+            d.efc.vel,
+            d.efc.aref,
+            d.efc.frictionloss,
+          ],
+        )

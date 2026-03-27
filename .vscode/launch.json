@@ -1,0 +1,62 @@
+{
+    // 使用 IntelliSense 了解相关属性。 
+    // 悬停以查看现有属性的描述。
+    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+
+        {
+            "name": "viewer",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/mujoco_warp/viewer.py",
+            "console": "integratedTerminal",
+            "args": "benchmark/humanoid/humanoid.xml"
+        },
+        {
+            "name": "viewer_musa",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/mujoco_warp/viewer_musa.py",
+            "console": "integratedTerminal",
+            "args": "benchmark/humanoid/humanoid.xml",
+            "justMyCode": false
+        },
+        {
+            "name": "collision_driver_test",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/mujoco_warp/_src/collision_driver_test.py",
+            "console": "integratedTerminal",
+            // "args": "benchmark/humanoid/humanoid.xml",
+            "justMyCode": false
+        },
+        {
+            "name": "ray_test",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/mujoco_warp/_src/ray_test.py",
+            "console": "integratedTerminal",
+            // "args": "benchmark/humanoid/humanoid.xml",
+            "justMyCode": false
+        },
+        {
+            "name": "support_test",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/mujoco_warp/_src/mujoco_musa/tests/support_test.py",
+            "console": "integratedTerminal",
+            // "args": "benchmark/humanoid/humanoid.xml",
+            "justMyCode": false
+        },
+        {
+            "name": "forward_test",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/mujoco_warp/_src/mujoco_musa/tests/forward_test.py",
+            "console": "integratedTerminal",
+            // "args": "benchmark/humanoid/humanoid.xml",
+            "justMyCode": false
+        }
+    ]
+}

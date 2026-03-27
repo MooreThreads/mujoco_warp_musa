@@ -30,7 +30,7 @@ dependencies = [
     "mujoco==3.4.0",
     "numpy",
     # "axinfra",
-    "axinfra @ git+ssh://git@sh-code.mthreads.com/sw/axInfrastructure.git@0.0.4",
+    "axinfra @ git+ssh://git@github.com:MooreThreads/mujoco_musa.git@v1.0.0",
     # "setuptools",
 ]
 

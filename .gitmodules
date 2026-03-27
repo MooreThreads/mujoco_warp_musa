@@ -1,4 +1,3 @@
 [submodule "dependencies/mujoco-musa"]
 	path = dependencies/mujoco-musa
-	url = git@sh-code.mthreads.com:sw/mujoco-musa.git
-	branch = dev_externC
+	url = git@github.com:MooreThreads/mujoco_musa.git
